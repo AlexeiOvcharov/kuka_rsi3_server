@@ -4,12 +4,25 @@
 #define TIME_STEP 0.05
 int main(int argc, char ** argv)
 {
-    double a = 3;
-    double v = 5;
-    double q1 = 0;
-    double q2 = 90;
+    /** Settings **/
+    /// Accelerations
+    double a[DOF] = {3, 3, 3, 3, 3, 3};
+    JointVal accel(a);
 
-    TrajectoryGenerator trajGen(a, v, TIME_STEP);
+    /// Velocities
+    double v[DOF] = {5, 5, 5, 5, 5, 5};
+    JointVal vel(v);
+
+    /// Initial generilized coorinates
+    double ang1[DOF] = {0, 0, 0, 0, 0, 0};
+    JointVal q1(ang1);
+
+    /// Initial generilized coorinates
+    double ang2[DOF] = {0, 90, -90, 0, 0, 45};
+    JointVal q2(ang2);
+
+
+    TrajectoryGenerator trajGen(accel, vel, TIME_STEP);
     if (trajGen.generateTrajectory(q1, q2)) {
         trajGen.writeToFile("Test.dat");
     }
