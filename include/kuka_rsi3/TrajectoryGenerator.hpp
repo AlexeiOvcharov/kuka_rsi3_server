@@ -12,21 +12,22 @@
 #define MIN_TRAJ 0.1
 #define ACCEL_CORRECTION true
 #define MAX_ACCEL 5
+#define DOF 6
 
 class TrajectoryGenerator 
 {
     public:
         TrajectoryGenerator(double acceleration, double velocity, double timeStep)
         : accel(acceleration), vel(velocity), T(timeStep)
+        {}
 
         bool generateTrajectory(double startAng, double endAng) {
 
-            q1 = startAng; q2 = endAng;
             qTraj.resize(0);
             time.resize(0);
 
             double step = MIN_TRAJ;     // degrees
-            double dq = q2 - q1;
+            double dq = endAng - startAng;
             int movementDirection = (dq > 0) - (dq < 0);
 
             if (MIN_TRAJ > abs(dq)) {
@@ -59,19 +60,19 @@ class TrajectoryGenerator
             double currTime = 0;
             double currAng = 0;
             for(; currTime <= trajectoryTime[1]; currTime += T) {
-                currAng = movementDirection*accel*currTime*currTime/2 + q1;
+                currAng = movementDirection*accel*currTime*currTime/2 + startAng;
                 qTraj.push_back(round(currAng*1000)/1000);
                 time.push_back(currTime);
             }
             for(; currTime <= trajectoryTime[2]; currTime += T) {
-                currAng = movementDirection*(vel*currTime - accel*trajectoryTime[1]*trajectoryTime[1]/2.0) + q1;
+                currAng = movementDirection*(vel*currTime - accel*trajectoryTime[1]*trajectoryTime[1]/2.0) + startAng;
                 qTraj.push_back(round(currAng*1000)/1000);
                 time.push_back(currTime);
             }
             for(; currTime <= trajectoryTime[3]; currTime += T) {
                 currAng = movementDirection*(-accel*currTime*currTime/2.0
                  + accel*(trajectoryTime[1] + trajectoryTime[2])*currTime
-                 - accel*(trajectoryTime[1]*trajectoryTime[1] + trajectoryTime[2]*trajectoryTime[2])/2.0) + q1;
+                 - accel*(trajectoryTime[1]*trajectoryTime[1] + trajectoryTime[2]*trajectoryTime[2])/2.0) + startAng;
                 qTraj.push_back(round(currAng*1000)/1000);
                 time.push_back(currTime);
             }
