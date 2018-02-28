@@ -3,12 +3,16 @@
 #include <boost/thread.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-#include <yaml-cpp/yaml.h> // For configuration of project
-#include <pugixml.hpp>  // Work with xml tree
+#include <yaml-cpp/yaml.h>  // For configuration of project
+#include <pugixml.hpp>      // Work with xml tree
 #include <string>
-#include <iostream>     // std::cout
-#include <sstream>      // std::stringstream
+#include <iostream>         // std::cout
+#include <sstream>          // std::stringstream
 #include <cstdlib>
+
+// ROS
+#include <ros/package.h>
+#include <ros/ros.h>
 
 #include "kuka_rsi3/CommandComunication.hpp"
 
@@ -59,8 +63,10 @@ int main()
     //int servPort = config["server_port"].as<int>(); 
 
     /*** Setup configuration ***/
+    std::string packagePath = ros::package::getPath("kuka_rsi3_server");
+
     pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file("../RSI/Painter_RSI.xml");
+    pugi::xml_parse_result result = doc.load_file(std::string(packagePath + "/RSI/Painter_RSI.xml").c_str());
 
     pugi::xml_node config =  doc.child("ROOT").child("CONFIG");
     const ip::address servAddres = ip::address::from_string(config.child_value("IP_NUMBER"));
@@ -72,7 +78,7 @@ int main()
 
     /*** Createing response message ***/
     pugi::xml_document resp;
-    result = resp.load_file("../RSI/Send_MSG.xml"); 
+    result = resp.load_file(std::string(packagePath + "/RSI/Send_MSG.xml").c_str());
 
     resp.child("Sen").attribute("Type").set_value(senType);
     resp.child("Sen").child("EStr").last_child().set_value(description);

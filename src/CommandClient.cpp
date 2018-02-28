@@ -22,18 +22,18 @@ int main(int argc, char ** argv)
     JointVal accel(a);
 
     /// Velocities
-    double v[DOF] = {10, 10, 10, 10, 10, 10}
+    double v[DOF] = {10, 10, 10, 10, 10, 10};
     JointVal vel(v);
 
     JointVal currJntAng, desiredJntAng, ang;
 
     std::cout << "Insert value for each axis (A1, A2, ... , A6) in degree and press ENTER." << std::endl;
     std::cout << "For example: " << std::endl;
-    std::cout << "A1: 60.1"  << std::endl;
-    std::cout << "A2: 0.1"       << std::endl;
-    std::cout << "A3: 0"         << std::endl;
-    std::cout << "A4: 90"        << std::endl;
-    std::cout << "A5: -30"       << std::endl;
+    std::cout << "A1: 60.1"     << std::endl;
+    std::cout << "A2: 0.1"      << std::endl;
+    std::cout << "A3: 0"        << std::endl;
+    std::cout << "A4: 90"       << std::endl;
+    std::cout << "A5: -30"      << std::endl;
     std::cout << "A6: 60"       << std::endl;
     std::cout << "--------------------------------------------------\n" << std::endl;
 

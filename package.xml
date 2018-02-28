@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package>
+  <name>kuka_rsi3_server</name>
+  <version>0.0.0</version>
+  <description>RSI3 communication package</description>
+
+  <maintainer email="ovcharov.a@protonmail.com">Aleksei Ovcharov</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>roslib</build_depend>
+
+  <export>
+  </export>
+</package>
