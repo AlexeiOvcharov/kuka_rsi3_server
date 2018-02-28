@@ -3,7 +3,7 @@ project(kuka_rsi3_server)
 
 add_compile_options(-std=c++11)
 
-find_package(catkin COMPONENTS roscpp roslib REQUIRED)
+find_package(catkin COMPONENTS roscpp roslib brics_actuator REQUIRED)
 find_package(Boost COMPONENTS system thread filesystem REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
