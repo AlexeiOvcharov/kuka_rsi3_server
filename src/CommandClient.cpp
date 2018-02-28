@@ -22,7 +22,7 @@ int main(int argc, char ** argv)
     JointVal accel(a);
 
     /// Velocities
-    double v[DOF] = {10, 10, 10, 10, 10, 10}
+    double v[DOF] = {10, 10, 10, 10, 10, 10};
     JointVal vel(v);
 
     JointVal currJntAng, desiredJntAng, ang;
