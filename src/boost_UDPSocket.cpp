@@ -18,6 +18,9 @@
 
 using namespace boost::asio;
 
+boost::filesystem::path p{"test.dat"};
+boost::filesystem::ofstream ofs{p};
+
 double A[6] = {0, 0, 0, 0, 0, 0};
 void receiveCommand() 
 {
@@ -42,6 +45,10 @@ void receiveCommand()
             A[4] = commandXML.child("AKorr").attribute("A5").as_double();
             A[5] = commandXML.child("AKorr").attribute("A6").as_double();
 
+            // if (TITLE) ofs << "q" << "\t" << "t" << "\n";
+            for (size_t i = 0; i < 6; ++i)
+                ofs << A[i] << "\t";
+            ofs << "\n";
             server.send(success);
         }
         std::cout << "[TCP] Connection lost." << std::endl;

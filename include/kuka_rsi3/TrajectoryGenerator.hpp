@@ -13,7 +13,10 @@
 #define TITLE false
 #define MIN_TRAJ 0.1
 #define ACCEL_CORRECTION true
+#define VEL_CORRECTION true
 #define MAX_ACCEL 5
+#define MAX_VEL 10
+#define VEL_STEP 0.1
 #define DOF 6
 
 typedef matrix::Vector<double, DOF> JointVal;
@@ -53,8 +56,9 @@ class TrajectoryGenerator
                 if (DEBUG) std::cout << "Accel: " << accel(i) << "\t | \t" << "Vel: " << vel(i) << std::endl;
                 if (DEBUG) std::cout << "[PARAMETERS] (Without correction) " << trajectoryTime[i][1] << ", " << trajectoryTime[i][2] << ", " << trajectoryTime[i][3] << std::endl;
 
-                if (trajectoryTime[i][1] > trajectoryTime[i][2]) {
+                while (trajectoryTime[i][1] > trajectoryTime[i][2]) {
                     std::cout << "Trajectory time for acceleration is too hight!" << std::endl;
+                    // Accel correction
                     if (ACCEL_CORRECTION) {
                         std::cout << "Acceleration correction." << std::endl;
                         accel(i) = vel(i)/trajectoryTime[i][2];
@@ -62,11 +66,27 @@ class TrajectoryGenerator
                         trajectoryTime[i][3] = trajectoryTime[i][1] + trajectoryTime[i][2];
                         if (DEBUG) std::cout << "[PARAMETERS] " << trajectoryTime[i][1] << ", " << trajectoryTime[i][2] << ", " << trajectoryTime[i][3] << std::endl;
                     } else return false;
+
+                    if (accel(i) > MAX_ACCEL) {
+                        std::cout << "Acceleration is too hight!" << std::endl;
+                        if (VEL_CORRECTION) {
+                            std::cout << "Try velocity correction!" << std::endl;
+                            vel(i) -= VEL_STEP;
+                            trajectoryTime[i][1] = vel(i)/accel(i);
+                            trajectoryTime[i][2] = abs(dq(i))/vel(i);
+                        } else return false;
+                    }
                 }
-                if (accel(i) > MAX_ACCEL) {
-                    std::cout << "Acceleration is too hight!" << std::endl;
-                    return false;
-                }
+                // while (accel(i) > MAX_ACCEL) {
+                //     std::cout << "Acceleration is too hight!" << std::endl;
+                //     if (VEL_CORRECTION) {
+                //         std::cout << "Try velocity correction!" << std::endl;
+                //         vel(i) -= VEL_STEP;
+                //         trajectoryTime[i][1] = vel(i)/accel(i);
+                //         trajectoryTime[i][2] = abs(dq(i))/vel(i);
+                //     }
+                //     return false;
+                // }
 
                 if (trajectoryTime[i][3] > maxTime) {
                     maxTime = trajectoryTime[i][3];

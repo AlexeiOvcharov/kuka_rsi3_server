@@ -1,7 +1,6 @@
 
-data = read("build/Test.dat", -1, 7);
+data = read("/home/senserlex/RosWorkspaces/kuka_ws/test.dat", -1, 6);
 q = data(:, 1:6);
-t = data(:, 7);
-
-plot(t, q);
+//t = (1:size(data, 1))*0.004;
+plot(q);
 legend("$q_1$", "$q_2$", "$q_3$", "$q_4$", "$q_5$", "$q_6$")
