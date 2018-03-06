@@ -14,7 +14,7 @@ int main(int argc, char ** argv)
     JointVal vel(v);
 
     /// Initial generilized coorinates
-    double ang1[DOF] = {0, 0, 0, 0, 0, 0};
+    double ang1[DOF] = {30, -45, 0, 0, 9.2, 0};
     JointVal q1(ang1);
 
     /// Initial generilized coorinates
