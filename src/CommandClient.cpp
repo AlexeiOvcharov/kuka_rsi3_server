@@ -11,19 +11,32 @@
 #include "kuka_rsi3/CommandComunication.hpp"
 #include "kuka_rsi3/TrajectoryGenerator.hpp"
 
+#define OFFSET_A1 0
+#define OFFSET_A2 -90
+#define OFFSET_A3 90
+#define OFFSET_A4 0
+#define OFFSET_A5 0
+#define OFFSET_A6 0
 #define TIME_STEP 0.004
+
 JointVal currJntAng, desiredJntAng, ang;
 bool receive = false;
 
 void jointPositionCallback(const brics_actuator::JointPositions & msg) {
     receive = true;
     for (size_t i = 0; i < msg.positions.size(); ++i) {
-        if (msg.positions[i].joint_uri == "joint_a1") desiredJntAng(0) = msg.positions[i].value;
-        if (msg.positions[i].joint_uri == "joint_a2") desiredJntAng(1) = msg.positions[i].value;
-        if (msg.positions[i].joint_uri == "joint_a3") desiredJntAng(2) = msg.positions[i].value;
-        if (msg.positions[i].joint_uri == "joint_a4") desiredJntAng(3) = msg.positions[i].value;
-        if (msg.positions[i].joint_uri == "joint_a5") desiredJntAng(4) = msg.positions[i].value;
-        if (msg.positions[i].joint_uri == "joint_a6") desiredJntAng(5) = msg.positions[i].value;
+        if (msg.positions[i].joint_uri == "joint_a1")
+            desiredJntAng(0) = msg.positions[i].value * 180/M_PI - OFFSET_A1;
+        if (msg.positions[i].joint_uri == "joint_a2")
+            desiredJntAng(1) = msg.positions[i].value * 180/M_PI - OFFSET_A2;
+        if (msg.positions[i].joint_uri == "joint_a3")
+            desiredJntAng(2) = msg.positions[i].value * 180/M_PI - OFFSET_A3;
+        if (msg.positions[i].joint_uri == "joint_a4")
+            desiredJntAng(3) = msg.positions[i].value * 180/M_PI - OFFSET_A4;
+        if (msg.positions[i].joint_uri == "joint_a5")
+            desiredJntAng(4) = msg.positions[i].value * 180/M_PI - OFFSET_A5;
+        if (msg.positions[i].joint_uri == "joint_a6")
+            desiredJntAng(5) = msg.positions[i].value * 180/M_PI - OFFSET_A6;
     }
 }
 

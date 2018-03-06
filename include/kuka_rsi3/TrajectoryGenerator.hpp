@@ -13,130 +13,160 @@
 #define TITLE false
 #define MIN_TRAJ 0.1
 #define ACCEL_CORRECTION true
-#define VEL_CORRECTION true
-#define MAX_ACCEL 5
-#define MAX_VEL 10
-#define VEL_STEP 0.1
+#define MAX_VEL 5
 #define DOF 6
 
 typedef matrix::Vector<double, DOF> JointVal;
+
+class VelFunc
+{
+    public:
+
+        VelFunc(double maxAccel = 0, double maxVel = 0)
+        : ddq_m(maxAccel), dq_m(maxVel), valid(false)
+        {}
+
+        void setParams(double maxAccel, double maxVel)
+        {
+            ddq_m = maxAccel; dq_m = maxVel;
+        }
+
+        bool setPose(double initialPos, double endPos, double minPoseDiff)
+        {
+            q_i = initialPos;
+            q_e = endPos;
+
+            q_diff = std::abs(q_e - q_i);
+            min_q_diff = minPoseDiff;
+            diraction = (q_e > q_i) - (q_e < q_i);
+            t0 = 5*minPoseDiff;
+            calculateParameters();
+
+            if (!checkTime()) {
+                std::cout << "Error: t2 < t1" << std::endl;
+                std::cout << "Try correct max vel: ";
+                if(maxVelCorrection(q_diff))
+                    std::cout << dq_m << std::endl;
+                else {
+                    std::cout << "Fail!" << std::endl;
+                    return false;
+                }
+                calculateParameters();
+                // return false;
+            }
+            if (!checkPathLength(q_diff)) {
+                std::cout << "Error: Path length is too small" << std::endl;
+                if (DEBUG) std::cout << "q_diff: " << q_diff << "\t min_q_diff: " << min_q_diff << std::endl;
+                return false;
+            }
+            return true;
+        }
+
+        double getVal(double x)
+        {
+            if (x >= t0 && x < t1)
+                return ddq_m*(x - t0);
+            if (x >= t1 && x < t2)
+                return dq_m;
+            if (x >= t2 && x < t3)
+                return dq_m - ddq_m*(x - t2);
+            return 0;
+        }
+
+        void getTimeSpan(double * timeSpan)
+        {
+            timeSpan[0] = 0;
+            timeSpan[1] = t3 + 5*min_q_diff;
+        }
+
+        bool valid;
+    private:
+
+        bool calculateParameters()
+        {
+            // Forward time calculation
+            t1 = dq_m/ddq_m + t0;
+            t2 = q_diff/dq_m + t0;
+            t3 = t2 + t1 - t0;
+
+            if (DEBUG) std::cout << "t \t [t0, t1, t2, t3] \t\t (" << t0 << ", " << t1 << ", " << t2 << ", " << t3 << ")" << std::endl;
+            if (DEBUG) std::cout << "Params \t [vel, accel, q_i, q_e] \t (" << dq_m << ", " << ddq_m << ", " << q_i << ", " << q_e << ")" << std::endl;
+            return true;
+        }
+
+        bool checkTime()
+        {
+            if (t1 > t2) return false;
+            else return true;
+        }
+
+        bool checkPathLength(double pathLength)
+        {
+            if (pathLength <= min_q_diff) return false;
+            else  return true;
+        }
+
+        bool maxVelCorrection(double q_diff)
+        {
+            dq_m = 0.9*sqrt(ddq_m*q_diff);
+            if (dq_m > MAX_VEL) dq_m = MAX_VEL;
+            return true;
+        }
+
+        double t0, t1, t2, t3;
+        double ddq_m, dq_m, q_i, q_e, min_q_diff, q_diff, diraction, shiftTime;
+};
 
 class TrajectoryGenerator 
 {
     public:
         TrajectoryGenerator(JointVal acceleration, JointVal velocity, double timeStep)
         : accel(acceleration), vel(velocity), T(timeStep)
-        {}
+        {
+            funcVector.resize(DOF);
+            for (size_t i = 0; i < DOF; ++i)
+                funcVector[i].setParams(accel(i), vel(i));
+        }
 
         // Trjectory generate ONLY for move PTP move
         bool generateTrajectory(JointVal startAng, JointVal endAng) {
 
             JointVal dq = endAng - startAng;
-            JointVal movementDirection;
             JointVal currAng;
+            double timeSpan[] = {0, 0};
+            double currTimeSpan[] = {0, 0};
             double maxTime = 0;
-            size_t maxTimeJoint = 0;
-            double trajectoryTime[DOF][4];
-            size_t points = 0;
 
             for (size_t i = 0; i < DOF; ++i) {
-                // If angle diff is small then the angle is constant
+                // If angle diff is small then the angle is constant (not valid)
+                funcVector[i].valid = false;
+                currAng(i) = startAng(i);
                 if (MIN_TRAJ > abs(dq(i))) {
-                    movementDirection(i) = 0;
-                    currAng(i) = startAng(i);
                     if (DEBUG) std::cout << "LOW A" << (i + 1) << std::endl;
                     continue;
                 }
 
-                movementDirection(i) = (dq(i) > 0) - (dq(i) < 0);
-                trajectoryTime[i][1] = 0;
-                trajectoryTime[i][1] = vel(i)/accel(i);
-                trajectoryTime[i][2] = abs(dq(i))/vel(i);
-                trajectoryTime[i][3] = trajectoryTime[i][1] + trajectoryTime[i][2];
-                if (DEBUG) std::cout << "Accel: " << accel(i) << "\t | \t" << "Vel: " << vel(i) << std::endl;
-                if (DEBUG) std::cout << "[PARAMETERS] (Without correction) " << trajectoryTime[i][1] << ", " << trajectoryTime[i][2] << ", " << trajectoryTime[i][3] << std::endl;
-
-                while (trajectoryTime[i][1] > trajectoryTime[i][2]) {
-                    std::cout << "Trajectory time for acceleration is too hight!" << std::endl;
-                    // Accel correction
-                    if (ACCEL_CORRECTION) {
-                        std::cout << "Acceleration correction." << std::endl;
-                        accel(i) = vel(i)/trajectoryTime[i][2];
-                        trajectoryTime[i][1] = vel(i)/accel(i);
-                        trajectoryTime[i][3] = trajectoryTime[i][1] + trajectoryTime[i][2];
-                        if (DEBUG) std::cout << "[PARAMETERS] " << trajectoryTime[i][1] << ", " << trajectoryTime[i][2] << ", " << trajectoryTime[i][3] << std::endl;
-                    } else return false;
-
-                    if (accel(i) > MAX_ACCEL) {
-                        std::cout << "Acceleration is too hight!" << std::endl;
-                        if (VEL_CORRECTION) {
-                            std::cout << "Try velocity correction!" << std::endl;
-                            vel(i) -= VEL_STEP;
-                            trajectoryTime[i][1] = vel(i)/accel(i);
-                            trajectoryTime[i][2] = abs(dq(i))/vel(i);
-                        } else return false;
-                    }
-                }
-                // while (accel(i) > MAX_ACCEL) {
-                //     std::cout << "Acceleration is too hight!" << std::endl;
-                //     if (VEL_CORRECTION) {
-                //         std::cout << "Try velocity correction!" << std::endl;
-                //         vel(i) -= VEL_STEP;
-                //         trajectoryTime[i][1] = vel(i)/accel(i);
-                //         trajectoryTime[i][2] = abs(dq(i))/vel(i);
-                //     }
-                //     return false;
-                // }
-
-                if (trajectoryTime[i][3] > maxTime) {
-                    maxTime = trajectoryTime[i][3];
-                    maxTimeJoint = i;
+                funcVector[i].valid = true;
+                funcVector[i].setPose(startAng(i), endAng(i), MIN_TRAJ);
+                funcVector[i].getTimeSpan(currTimeSpan);
+                if (maxTime < currTimeSpan[1] - currTimeSpan[0]) {
+                    maxTime = currTimeSpan[1] - currTimeSpan[0];
+                    timeSpan[0] = currTimeSpan[0];
+                    timeSpan[1] = currTimeSpan[1];
                 }
             }
 
-            points = round(maxTime/T) + 1;
-            qTraj.resize(points);
-            time.resize(points);
-            size_t i = 0;
-            size_t p = 0;
-            if (DEBUG) std::cout << "Points number: " << points << std::endl;
-
-            for (double currTime = 0; currTime <= maxTime; currTime += T, ++p) {
-                i = 0;
-                for (; i < DOF; ++i) {
-                    if (movementDirection(i) == 0) continue;
-                    // Acceleration = max
-                    if (currTime <= trajectoryTime[i][1]) {
-                        currAng(i) = movementDirection(i)*accel(i)*currTime*currTime/2 + startAng(i);
-                        // if (DEBUG) std::cout << "Accel = max" << std::endl;
-                        // if (DEBUG) std::cout << "Angle: " << currAng(i) << std::endl;
+            for (double t = timeSpan[0]; t <= timeSpan[1]; t += T) {
+                for (size_t i = 0; i < DOF; ++i) {
+                    if (!funcVector[i].valid) {
+                        continue;
                     }
-                    // Acceleration = const
-                    if (currTime > trajectoryTime[i][1] && currTime <= trajectoryTime[i][2]) {
-                        currAng(i) = movementDirection(i)*(vel(i)*currTime - accel(i)*trajectoryTime[i][1]*trajectoryTime[i][1]/2.0) + startAng(i);
-                        // if (DEBUG) std::cout << "Accel = 0" << std::endl;
-                        // if (DEBUG) std::cout << "Angle: " << currAng(i) << std::endl;
-                    }
-                    // Acceleration = -max
-                    if (currTime > trajectoryTime[i][2] && currTime <= trajectoryTime[i][3]) {
-                        currAng(i) = movementDirection(i)*(-accel(i)*currTime*currTime/2.0
-                         + accel(i)*(trajectoryTime[i][1] + trajectoryTime[i][2])*currTime
-                         - accel(i)*(trajectoryTime[i][1]*trajectoryTime[i][1] + trajectoryTime[i][2]*trajectoryTime[i][2])/2.0) + startAng(i);
-                        // if (DEBUG) std::cout << "Accel = -max" << std::endl;
-                        // if (DEBUG) std::cout << "Angle: " << currAng(i) << std::endl;
-                    }
+                    currAng(i) += T/2 * (funcVector[i].getVal(t + T) + funcVector[i].getVal(t));
                 }
-
-                // if (DEBUG) std::cout << "p: " << p << std::endl;
-
-                qTraj[p] = currAng;
-                time[p] = currTime;
+                qTraj.push_back(currAng);
+                time.push_back(t);
             }
-            if (DEBUG) std::cout << "Result: (p: " << p << ", " << "time.size(): " << time.size() << ")" << std::endl;
-            if (p > time.size()) {
-                std::cout << "Too many trajectory points!" << std::endl;
-                return false;
-            }
+
             return true;
         }
 
@@ -159,6 +189,7 @@ class TrajectoryGenerator
         JointVal accel;
         JointVal vel;
         double T;           // Time step
+        std::vector<VelFunc> funcVector;
 };
 
 #endif
