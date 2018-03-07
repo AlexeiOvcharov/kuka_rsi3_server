@@ -65,11 +65,11 @@ class VelFunc
         double getVal(double x)
         {
             if (x >= t0 && x < t1)
-                return ddq_m*(x - t0);
+                return diraction*ddq_m*(x - t0);
             if (x >= t1 && x < t2)
-                return dq_m;
+                return diraction*dq_m;
             if (x >= t2 && x < t3)
-                return dq_m - ddq_m*(x - t2);
+                return diraction*(dq_m - ddq_m*(x - t2));
             return 0;
         }
 
@@ -131,6 +131,9 @@ class TrajectoryGenerator
         // Trjectory generate ONLY for move PTP move
         bool generateTrajectory(JointVal startAng, JointVal endAng) {
 
+            qTraj.resize(0);
+            time.resize(0);
+
             JointVal dq = endAng - startAng;
             JointVal currAng;
             double timeSpan[] = {0, 0};
@@ -155,6 +158,7 @@ class TrajectoryGenerator
                     timeSpan[1] = currTimeSpan[1];
                 }
             }
+            timeSpan[1] += MIN_TRAJ*5;
 
             for (double t = timeSpan[0]; t <= timeSpan[1]; t += T) {
                 for (size_t i = 0; i < DOF; ++i) {

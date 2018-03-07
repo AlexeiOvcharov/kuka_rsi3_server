@@ -40,6 +40,14 @@ void jointPositionCallback(const brics_actuator::JointPositions & msg) {
     }
 }
 
+void displayJV(JointVal & jv, std::string title)
+{
+    std::cout << title << " (" << jv(0);
+    for (size_t i = 1; i < DOF; ++i)
+        std::cout << ", " << jv(i);
+    std::cout << ")" << std::endl;
+}
+
 int main(int argc, char ** argv)
 {
     /** ROS initialization **/
@@ -90,13 +98,16 @@ int main(int argc, char ** argv)
                 cmd = ss.str();
                 client.send(cmd);
                 cmd = client.read();
-                std::cout << cmd.data() << std::endl;
-                std::cout << i << "   -----------------------------------------------\n" << std::endl;
+                // std::cout << cmd.data() << std::endl;
+                // std::cout << i << "   -----------------------------------------------\n" << std::endl;
 
                 // clear
                 ss.str("");
                 boost::this_thread::sleep_for(boost::chrono::milliseconds(dt));
             }
+            std::cout << "Successful!" << std::endl;
+            displayJV(currJntAng,    "[q_i] \t");
+            displayJV(desiredJntAng, "[q_e] \t");
             currJntAng = desiredJntAng;
             receive = false;
         }
