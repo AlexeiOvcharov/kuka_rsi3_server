@@ -11,7 +11,7 @@
 
 using namespace boost::asio;
 
-class CommandClient 
+class CommandClient
 {
     public:
         CommandClient(std::string host, short int port, io_service & io_service)
@@ -88,7 +88,7 @@ class CommandClient
 
 };
 
-class CommandServer 
+class CommandServer
 {
     public:
         CommandServer(std::string host, short int port, io_service & io_service)

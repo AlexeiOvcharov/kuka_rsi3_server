@@ -3,7 +3,9 @@
 
 #include <boost/filesystem/fstream.hpp>
 
-#include <matrix/math.hpp>
+#include <kuka_rsi3/DataTypes.hpp>
+#include <kuka_rsi3/Params.hpp>
+#include <utils/PrettyPrint.hpp>
 
 #include <vector>
 #include <string>
@@ -11,12 +13,6 @@
 
 #define DEBUG true
 #define TITLE false
-#define MIN_TRAJ 0.1
-#define ACCEL_CORRECTION true
-#define MAX_VEL 5
-#define DOF 6
-
-typedef matrix::Vector<double, DOF> JointVal;
 
 class VelFunc
 {
@@ -42,7 +38,7 @@ class VelFunc
             t0 = 5*minPoseDiff;
             calculateParameters();
 
-            if (!checkTime()) {
+            if (!checkTime() || q_diff > MAX_VEL) {
                 std::cout << "Error: t2 < t1" << std::endl;
                 std::cout << "Try correct max vel: ";
                 if(maxVelCorrection(q_diff))
@@ -79,6 +75,16 @@ class VelFunc
             timeSpan[1] = t3 + 5*min_q_diff;
         }
 
+        double getVel()
+        {
+            return dq_m;
+        }
+
+        double getAccel()
+        {
+            return ddq_m;
+        }
+
         bool valid;
     private:
 
@@ -90,7 +96,7 @@ class VelFunc
             t3 = t2 + t1 - t0;
 
             if (DEBUG) std::cout << "t \t [t0, t1, t2, t3] \t\t (" << t0 << ", " << t1 << ", " << t2 << ", " << t3 << ")" << std::endl;
-            if (DEBUG) std::cout << "Params \t [vel, accel, q_i, q_e] \t (" << dq_m << ", " << ddq_m << ", " << q_i << ", " << q_e << ")" << std::endl;
+            // if (DEBUG) std::cout << "Params \t [vel, accel, q_i, q_e] \t (" << dq_m << ", " << ddq_m << ", " << q_i << ", " << q_e << ")" << std::endl;
             return true;
         }
 
@@ -117,7 +123,7 @@ class VelFunc
         double ddq_m, dq_m, q_i, q_e, min_q_diff, q_diff, diraction, shiftTime;
 };
 
-class TrajectoryGenerator 
+class TrajectoryGenerator
 {
     public:
         TrajectoryGenerator(JointVal acceleration, JointVal velocity, double timeStep)
@@ -145,7 +151,7 @@ class TrajectoryGenerator
                 funcVector[i].valid = false;
                 currAng(i) = startAng(i);
                 if (MIN_TRAJ > abs(dq(i))) {
-                    if (DEBUG) std::cout << "LOW A" << (i + 1) << std::endl;
+                    // if (DEBUG) std::cout << "LOW A" << (i + 1) << std::endl;
                     continue;
                 }
 
@@ -157,6 +163,10 @@ class TrajectoryGenerator
                     timeSpan[0] = currTimeSpan[0];
                     timeSpan[1] = currTimeSpan[1];
                 }
+
+                // Fill trajectory Information
+                trajInfo.vel(i) = funcVector[i].getVel();
+                trajInfo.accel(i) = funcVector[i].getAccel();
             }
             timeSpan[1] += MIN_TRAJ*5;
 
@@ -170,6 +180,13 @@ class TrajectoryGenerator
                 qTraj.push_back(currAng);
                 time.push_back(t);
             }
+
+            // Fill trajectory Information
+            trajInfo.q_i = startAng;
+            trajInfo.q_e = endAng;
+
+            if (DEBUG)
+                pp.printTrajInfo(trajInfo);
 
             return true;
         }
@@ -188,12 +205,16 @@ class TrajectoryGenerator
         }
 
         std::vector<JointVal> qTraj;
-        std::vector<double> time; 
+        std::vector<double> time;
     private:
         JointVal accel;
         JointVal vel;
         double T;           // Time step
+
+        TrajectoryInformation trajInfo;
         std::vector<VelFunc> funcVector;
+
+        PrettyPrint pp;
 };
 
 #endif

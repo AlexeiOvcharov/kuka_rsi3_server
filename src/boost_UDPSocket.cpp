@@ -22,7 +22,7 @@ boost::filesystem::path p{"test.dat"};
 boost::filesystem::ofstream ofs{p};
 
 double A[6] = {0, 0, 0, 0, 0, 0};
-void receiveCommand() 
+void receiveCommand()
 {
     // TODO better catch of errors
     pugi::xml_document commandXML;
@@ -57,7 +57,7 @@ void receiveCommand()
 
 /* TODO pretty view
 void view()
-{ 
+{
 
 }
 */
@@ -67,7 +67,7 @@ int main()
     // TODO project recofigure
     //YAML::Node config = YAML::LoadFile("../config/settings.yaml");
     //ip::address servAddres = ip::address::from_string(config["server_addres"].as<std::string>());
-    //int servPort = config["server_port"].as<int>(); 
+    //int servPort = config["server_port"].as<int>();
 
     /*** Setup configuration ***/
     std::string packagePath = ros::package::getPath("kuka_rsi3_server");

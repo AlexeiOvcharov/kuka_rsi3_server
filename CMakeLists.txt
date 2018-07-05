@@ -16,10 +16,10 @@ include_directories(
 )
 
 add_executable(server src/boost_UDPSocket.cpp)
-target_link_libraries(server ${Boost_LIBRARIES} ${YAML_CPP_LIBRARIES} pugixml ${catkin_LIBRARIES})
+target_link_libraries(server ${Boost_LIBRARIES} ${YAML_CPP_LIBRARIES} pugixml bprinter ${catkin_LIBRARIES})
 
 add_executable(client src/CommandClient.cpp)
-target_link_libraries(client ${Boost_LIBRARIES} ${YAML_CPP_LIBRARIES} pugixml ${catkin_LIBRARIES})
+target_link_libraries(client ${Boost_LIBRARIES} ${YAML_CPP_LIBRARIES} pugixml bprinter ${catkin_LIBRARIES})
 
 add_executable(trajtest src/TrajectoryTest.cpp)
-target_link_libraries(trajtest ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(trajtest ${Boost_LIBRARIES} bprinter ${catkin_LIBRARIES})

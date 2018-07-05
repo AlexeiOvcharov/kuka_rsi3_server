@@ -66,7 +66,7 @@ int main(int argc, char ** argv)
     JointVal accel(a);
 
     /// Velocities
-    double v[DOF] = {10, 10, 10, 10, 10, 10};
+    double v[DOF] = {7, 7, 7, 7, 7, 7};
     JointVal vel(v);
 
     std::stringstream ss("");
@@ -106,8 +106,8 @@ int main(int argc, char ** argv)
                 boost::this_thread::sleep_for(boost::chrono::milliseconds(dt));
             }
             std::cout << "Successful!" << std::endl;
-            displayJV(currJntAng,    "[q_i] \t");
-            displayJV(desiredJntAng, "[q_e] \t");
+            // displayJV(currJntAng,    "[q_i] \t");
+            // displayJV(desiredJntAng, "[q_e] \t");
             currJntAng = desiredJntAng;
             receive = false;
         }
