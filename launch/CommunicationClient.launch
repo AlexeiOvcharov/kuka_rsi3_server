@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-	<!-- Load params for communication client -->
-	<rosparam command="load" file="$(find kuka_rsi3_server)/config/CommunicationClientSetting.yaml" />
+    <!-- Load params for communication client -->
+    <rosparam command="load" file="$(find kuka_rsi3_server)/config/CommunicationClientSetting.yaml" />
 
-	<node name="communication_client" pkg="kuka_rsi3_server" type="communication_test" output="screen">
-	</node>
+    <node name="communication_client" pkg="kuka_rsi3_server" type="communication_test" output="screen">
+    </node>
+
+    <node name="rsi_server" pkg="kuka_rsi3_server" type="server" output="screen">
+    </node>
 
 </launch>
