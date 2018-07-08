@@ -1,0 +1,6 @@
+communication_address: "127.0.0.1"
+communication_port: 2002
+arm_name: "kuka_arm"
+
+## Freuency of sended trajectoyr to rsi 
+rsi_communication_frequency: 250

@@ -31,7 +31,7 @@ boost::filesystem::ofstream ofs{p};
 
 double A[6] = {0, 0, 0, 0, 0, 0};
 std::vector<double> JV(6);
-pugi::xml_node AK;
+// pugi::xml_node AK;
 
 void receiveCommand()
 {
@@ -48,13 +48,14 @@ void receiveCommand()
             cmd = server.read();
             commandXML.load_string(cmd.c_str());
 
-            // A[0] = commandXML.child("AKorr").attribute("A1").as_double();
-            // A[1] = commandXML.child("AKorr").attribute("A2").as_double();
-            // A[2] = commandXML.child("AKorr").attribute("A3").as_double();
-            // A[3] = commandXML.child("AKorr").attribute("A4").as_double();
-            // A[4] = commandXML.child("AKorr").attribute("A5").as_double();
-            // A[5] = commandXML.child("AKorr").attribute("A6").as_double();
-            AK = commandXML.child("AKorr");
+            A[0] = commandXML.child("AKorr").attribute("A1").as_double();
+            A[1] = commandXML.child("AKorr").attribute("A2").as_double();
+            A[2] = commandXML.child("AKorr").attribute("A3").as_double();
+            A[3] = commandXML.child("AKorr").attribute("A4").as_double();
+            A[4] = commandXML.child("AKorr").attribute("A5").as_double();
+            A[5] = commandXML.child("AKorr").attribute("A6").as_double();
+            // ROS_INFO_STREAM("Info: " << A[0] << ", " << A[1] << ", " << A[2] << ", " << A[3] << ", " << A[4] << ", " << A[5] << " --");
+            // AK = commandXML.child("AKorr");
 
             server.send(success);
         }
@@ -112,7 +113,7 @@ int main(int argc, char ** argv)
     resp.child("Sen").attribute("Type").set_value(senType);
     resp.child("Sen").child("EStr").last_child().set_value(description);
     pugi::xml_node ipoc = resp.child("Sen").child("IPOC").last_child();
-    // pugi::xml_node AK = resp.child("Sen").child("AKorr");
+    pugi::xml_node AK = resp.child("Sen").child("AKorr");
 
     ipoc.set_value("53");
 
@@ -164,25 +165,31 @@ int main(int argc, char ** argv)
 
             /// Work with receiving message
             receiveXML.load_string(buff.c_array());
-            JV[0] = (receiveXML.child("Sen").child("AKorr").attribute("A1").as_double() + OFFSET_A1) * M_PI/180;
-            JV[1] = (receiveXML.child("Sen").child("AKorr").attribute("A2").as_double() + OFFSET_A2) * M_PI/180;
-            JV[2] = (receiveXML.child("Sen").child("AKorr").attribute("A3").as_double() + OFFSET_A3) * M_PI/180;
-            JV[3] = (receiveXML.child("Sen").child("AKorr").attribute("A4").as_double() + OFFSET_A4) * M_PI/180;
-            JV[4] = (receiveXML.child("Sen").child("AKorr").attribute("A5").as_double() + OFFSET_A5) * M_PI/180;
-            JV[5] = (receiveXML.child("Sen").child("AKorr").attribute("A6").as_double() + OFFSET_A6) * M_PI/180;
+            JV[0] = (receiveXML.child("Rob").child("AIPos").attribute("A1").as_double()) * M_PI/180;
+            JV[1] = (receiveXML.child("Rob").child("AIPos").attribute("A2").as_double()) * M_PI/180;
+            JV[2] = (receiveXML.child("Rob").child("AIPos").attribute("A3").as_double()) * M_PI/180;
+            JV[3] = (receiveXML.child("Rob").child("AIPos").attribute("A4").as_double()) * M_PI/180;
+            JV[4] = (receiveXML.child("Rob").child("AIPos").attribute("A5").as_double()) * M_PI/180;
+            JV[5] = (receiveXML.child("Rob").child("AIPos").attribute("A6").as_double()) * M_PI/180;
 
             // std::cout << "*** Receive ------------------------------------------ " << receivedBytes << "bytes --- \n" << buff.c_array() << std::endl;
+            receiveXML.save(ss, "\t", pugi::format_raw | pugi::format_no_declaration);
+            respMsg = ss.str();
+            std::cout << respMsg << std::endl;
+            ss.str("");
 
             ipoc.set_value(receiveXML.child("Rob").child_value("IPOC"));
-            // AK.attribute("A1").set_value(A[0]);
-            // AK.attribute("A2").set_value(A[1]);
-            // AK.attribute("A3").set_value(A[2]);
-            // AK.attribute("A4").set_value(A[3]);
-            // AK.attribute("A5").set_value(A[4]);
-            // AK.attribute("A6").set_value(A[5]);
-            resp.child("Sen").child("AKorr") = AK;
+            AK.attribute("A1").set_value(A[0]);
+            AK.attribute("A2").set_value(A[1]);
+            AK.attribute("A3").set_value(A[2]);
+            AK.attribute("A4").set_value(A[3]);
+            AK.attribute("A5").set_value(A[4]);
+            AK.attribute("A6").set_value(A[5]);
+            // ROS_INFO_STREAM("Info: " << A[0] << ", " << A[1] << ", " << A[2] << ", " << A[3] << ", " << A[4] << ", " << A[5] << " --");
+            // resp.child("Sen").child("AKorr") = AK;
             resp.save(ss, "\t", pugi::format_raw | pugi::format_no_declaration);
             respMsg = ss.str();
+            // std::cout << respMsg << std::endl;
             if (error && error != error::message_size)
                 throw boost::system::system_error(error);
 

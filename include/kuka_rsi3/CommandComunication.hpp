@@ -28,6 +28,7 @@ class CommandClient
 
             socket.close();
 
+            // TODO check all signals
             while (retry) {
                 socket.connect(serverEP, error);
                 if (error && viewMessage) {
