@@ -1,5 +1,10 @@
+#ifndef PRETTY_PRINT
+#define PRETTY_PRINT
+
 #include <bprinter/table_printer.h>
 #include <kuka_rsi3/DataTypes.hpp>
+#include <trajectory_msgs/JointTrajectory.h>
+#include <trajectory_msgs/JointTrajectoryPoint.h>
 
 #define _USE_MATH_DEFINES
 #define USE_BOOST_KARMA
@@ -36,3 +41,5 @@ class PrettyPrint
     private:
         TablePrinter trajInfoTable;
 };
+
+#endif

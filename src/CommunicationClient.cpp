@@ -67,7 +67,6 @@ void CommunicationClient::communication(std::string address, short int port)
 
         while(true) {
             if (trajectoryIsActive) {
-                trajectoryLineInterpolation();
                 for (size_t i = 0; i < actualTrajectory.points.size(); ++i){
                     ROS_INFO_STREAM(i << "\t" << actualTrajectory.points[i].time_from_start
                         << "\t" << actualTrajectory.points[i].positions[0]
@@ -76,6 +75,10 @@ void CommunicationClient::communication(std::string address, short int port)
                         << "\t" << actualTrajectory.points[i].positions[3]
                         << "\t" << actualTrajectory.points[i].positions[4]
                         << "\t" << actualTrajectory.points[i].positions[5]);
+                }
+                ROS_INFO("----------------------------------------------------------");
+                if(!trajectoryLineInterpolation()) {
+                    return;
                 }
             }
 
@@ -174,16 +177,18 @@ void CommunicationClient::followJointTrajectory(const control_msgs::FollowJointT
 {
     actualTrajectory = goal->trajectory;
     ROS_INFO_STREAM("Trajectory path: ");
-    for (size_t i = 0; i < actualTrajectory.points.size(); ++i) {
-        ROS_INFO_STREAM(i << "\t" << actualTrajectory.points[i].time_from_start.toSec() << "\t" << actualTrajectory.points[i].positions[0]);
-    }
+    // for (size_t i = 0; i < actualTrajectory.points.size(); ++i) {
+    //     ROS_INFO_STREAM(i << "\t" << actualTrajectory.points[i].time_from_start.toSec() << "\t" << actualTrajectory.points[i].positions[0]);
+    // }
+
 
     ROS_INFO_STREAM("Duration: " << goal->goal_time_tolerance);
 
     trajectoryIsActive = true;
     // communicationThread->join();
 
-    ROS_INFO_STREAM("Set abort;");
+    while (trajectoryIsActive)
+        ros::Duration(0.3).sleep();
 
     resultOfTrajExecution.error_code = 0;
     resultOfTrajExecution.error_string = "Successful";
@@ -229,7 +234,11 @@ bool CommunicationClient::trajectoryLineInterpolation()
             t += main_dt;
         }
     }
+    point.positions = actualTrajectory.points.back().positions;
+    point.time_from_start = ros::Duration(t);
+    trj.points.push_back(point);
     actualTrajectory = trj;
+    return true;
 }
 
 void CommunicationClient::setCommunicationFrequency(double freq)

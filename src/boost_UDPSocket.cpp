@@ -175,7 +175,7 @@ int main(int argc, char ** argv)
             // std::cout << "*** Receive ------------------------------------------ " << receivedBytes << "bytes --- \n" << buff.c_array() << std::endl;
             receiveXML.save(ss, "\t", pugi::format_raw | pugi::format_no_declaration);
             respMsg = ss.str();
-            std::cout << respMsg << std::endl;
+            // std::cout << respMsg << std::endl;
             ss.str("");
 
             ipoc.set_value(receiveXML.child("Rob").child_value("IPOC"));
