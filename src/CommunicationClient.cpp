@@ -208,6 +208,8 @@ bool CommunicationClient::trajectoryLineInterpolation()
     double dt = 0, t0 = 0, t = 0;
     JointVal a, b, q2, q1, currentJV;
     q2 = fromMsgToJointVal(actualTrajectory.points[0].positions);
+    ROS_INFO_STREAM("Manin freq: " << communicationFrequency);
+    ROS_INFO_STREAM("Manin dt: " << main_dt);
 
     for (size_t inervalNum = 0; inervalNum < actualTrajectory.points.size() - 1; ++inervalNum) {
 
