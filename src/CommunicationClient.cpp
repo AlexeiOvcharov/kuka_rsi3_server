@@ -38,7 +38,8 @@ std::vector<double> fromJointValToMsg(JointVal jv) {
 CommunicationClient::CommunicationClient(ros::NodeHandle & nh, std::string address, short int port) : node(nh)
 {
 
-    communicationThread = new boost::thread(&CommunicationClient::communication, this, address, port);
+    this->address = address;
+    this->port = port;
     trajectoryIsActive = false;
 
     /// Accelerations
@@ -48,17 +49,21 @@ CommunicationClient::CommunicationClient(ros::NodeHandle & nh, std::string addre
     /// Velocities
     double v[DOF] = {7, 7, 7, 7, 7, 7};
     vel = JointVal(v);
+
+    dataProcessingPackagePath = ros::package::getPath("rsi_tests");
 }
 CommunicationClient::~CommunicationClient()
 {}
 
 void CommunicationClient::communication(std::string address, short int port)
 {
-    int dt = 1000/communicationFrequency;
+
+    int main_dt = 1000.0/communicationFrequency;
     int waitingModeDuration = 500; // millisecons
     std::stringstream message;
     size_t trjPoint = 0;
     std::string command;
+    ROS_INFO_STREAM("Execute: main_dt: " << main_dt << " ms | \t" << communicationFrequency);
 
     // try {
 
@@ -67,7 +72,15 @@ void CommunicationClient::communication(std::string address, short int port)
 
         while(true) {
             if (trajectoryIsActive) {
-                for (size_t i = 0; i < actualTrajectory.points.size(); ++i){
+
+                // Open file
+                std::stringstream csvfilePath;
+                csvfilePath << dataProcessingPackagePath << "/data/data1.csv";
+                ROS_INFO("File path: %s", csvfilePath.str().c_str());
+                boost::filesystem::ofstream ofs{csvfilePath.str()};
+                csvfilePath.str("");
+
+                for (size_t i = 0; i < actualTrajectory.points.size(); ++i) {
                     ROS_INFO_STREAM(i << "\t" << actualTrajectory.points[i].time_from_start
                         << "\t" << actualTrajectory.points[i].positions[0]
                         << "\t" << actualTrajectory.points[i].positions[1]
@@ -75,10 +88,33 @@ void CommunicationClient::communication(std::string address, short int port)
                         << "\t" << actualTrajectory.points[i].positions[3]
                         << "\t" << actualTrajectory.points[i].positions[4]
                         << "\t" << actualTrajectory.points[i].positions[5]);
+
+                    // Write to file
+                    ofs << actualTrajectory.points[i].time_from_start;
+                    for (size_t joint = 0; joint < 6; ++joint)
+                        ofs << ", " << actualTrajectory.points[i].positions[joint];
+                    ofs << "\n";
                 }
+                ofs.close();
                 ROS_INFO("----------------------------------------------------------");
                 if(!trajectoryLineInterpolation()) {
                     return;
+                }
+
+                // Open file
+                csvfilePath << dataProcessingPackagePath << "/data/data1_interpolation.csv";
+                ROS_INFO("File path: %s", csvfilePath.str().c_str());
+                ofs.open(csvfilePath.str());
+                csvfilePath.str("");
+
+                for (size_t i = 0; i < actualTrajectory.points.size(); ++i) {
+
+                    // Write to file
+                    ofs << actualTrajectory.points[i].time_from_start;
+                    for (size_t joint = 0; joint < 6; ++joint)
+                        ofs << ", " << actualTrajectory.points[i].positions[joint];
+                    ofs << "\n";
+
                 }
             }
 
@@ -94,17 +130,19 @@ void CommunicationClient::communication(std::string address, short int port)
                     << "\" />" << std::endl;
                 command = message.str();
                 // std::cout << message.str() << std::endl;
+                // std::cout << "(" << trjPoint << ")" << message.str() << std::endl;
 
                 client->send(command);
 
                 ++trjPoint;
                 if (trjPoint == actualTrajectory.points.size()) {
-                    ROS_INFO_STREAM("Successful send trajectory");
+                    // ROS_INFO_STREAM("Successful send trajectory");
+                    std::cout << "Successful" << std::endl;
                     trjPoint = 0;
                     trajectoryIsActive = false;
                 }
 
-                boost::this_thread::sleep_for(boost::chrono::milliseconds(dt));
+                boost::this_thread::sleep_for(boost::chrono::milliseconds(main_dt));
             }
             boost::this_thread::sleep_for(boost::chrono::milliseconds(waitingModeDuration));
         }
@@ -117,6 +155,8 @@ void CommunicationClient::initializeArm(std::string armName)
     std::cout << "InitializeArm" << std::endl;
     std::stringstream topicName;
     std::stringstream actionName;
+
+    communicationThread = new boost::thread(&CommunicationClient::communication, this, address, port);
 
     topicName.str("");
     topicName << armName << "/arm_controller/position_command";

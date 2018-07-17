@@ -4,11 +4,13 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
+#include <boost/filesystem/fstream.hpp>
 
 #include <iostream>
 
 // ROS
 #include <ros/ros.h>
+#include <ros/package.h>
 
 #include <kuka_rsi3/CommandComunication.hpp>
 #include <kuka_rsi3/TrajectoryGenerator.hpp>
@@ -72,6 +74,11 @@ class CommunicationClient
         bool trajectoryIsActive;
 
         control_msgs::FollowJointTrajectoryResult resultOfTrajExecution;
+
+        std::string dataProcessingPackagePath;
+
+        std::string address;
+        short int port;
 
 };
 
